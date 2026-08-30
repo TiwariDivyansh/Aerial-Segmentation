@@ -1,5 +1,7 @@
 import sys
 import subprocess
+import platform
+import os
 
 
 def ensure_package(import_name, install_spec):
@@ -13,19 +15,33 @@ def ensure_package(import_name, install_spec):
         command.append(install_spec)
         subprocess.check_call(command)
 
+DISABLE_RUNTIME_BOOTSTRAP = os.getenv("DISABLE_RUNTIME_BOOTSTRAP", "0") == "1"
+IS_WINDOWS = platform.system().lower().startswith("win")
+
 # 1. HACK: Dynamically install the runtime stack if Hugging Face starts without it.
-ensure_package("torch", "torch==2.11.0")
-ensure_package("torchvision", "torchvision==0.26.0")
-ensure_package("detectron2", "git+https://github.com/facebookresearch/detectron2.git")
+if not DISABLE_RUNTIME_BOOTSTRAP:
+    ensure_package("torch", "torch==2.11.0")
+    ensure_package("torchvision", "torchvision==0.26.0")
+
+    if not IS_WINDOWS:
+        ensure_package("detectron2", "git+https://github.com/facebookresearch/detectron2.git")
 
 # 2. Now it is safe to import everything else
 import gradio as gr
-import cv2, os, torch
+import cv2, torch
 import numpy as np
 from PIL import Image
 import spaces
 
-import detectron2
+try:
+    import detectron2
+except ImportError as exc:
+    if IS_WINDOWS and not DISABLE_RUNTIME_BOOTSTRAP:
+        raise RuntimeError(
+            "Detectron2 is not set up for native Windows runs here. Use Docker or WSL for local testing, "
+            "or run the Hugging Face Space for the managed Linux environment."
+        ) from exc
+    raise
 from detectron2.config import get_cfg
 from detectron2 import model_zoo
 from detectron2.engine import DefaultPredictor
@@ -50,6 +66,18 @@ predictor = build_model()
 
 MetadataCatalog.get("app_catalog").set(thing_classes=CLASS_NAMES)
 
+USE_SPACES_GPU = os.getenv("USE_SPACES_GPU", "1") == "1"
+
+
+def gpu_wrapper(duration=10):
+    if USE_SPACES_GPU:
+        return spaces.GPU(duration=duration)
+
+    def decorator(function):
+        return function
+
+    return decorator
+
 def resize_for_inference(image_rgb, max_side=1280):
     height, width = image_rgb.shape[:2]
     longest_side = max(height, width)
@@ -63,7 +91,7 @@ def resize_for_inference(image_rgb, max_side=1280):
     return cv2.resize(image_rgb, (new_width, new_height), interpolation=cv2.INTER_AREA)
 
 
-@spaces.GPU(duration=10)
+@gpu_wrapper(duration=10)
 def predict_cadastral(input_image):
     if input_image is None:
         return None, "Upload a valid drone survey image."
@@ -126,4 +154,4 @@ with gr.Blocks(title="AI Cadastral Mapping") as demo:
     )
 
 if __name__ == "__main__":
-    demo.launch()
+    demo.launch(server_name=os.getenv("GRADIO_SERVER_NAME", "127.0.0.1"), server_port=int(os.getenv("GRADIO_SERVER_PORT", "7860")))
