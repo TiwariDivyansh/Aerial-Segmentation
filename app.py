@@ -6,7 +6,7 @@ try:
     import detectron2
 except ImportError:
     print("Installing detectron2 dynamically...")
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "git+https://github.com/facebookresearch/detectron2.git"])
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "--no-build-isolation", "git+https://github.com/facebookresearch/detectron2.git"])
 
 # 2. Now it is safe to import everything else
 import gradio as gr
