@@ -2,3 +2,4 @@ gradio>=4.0.0
 spaces
 opencv-python-headless
 ninja
+torchvision
