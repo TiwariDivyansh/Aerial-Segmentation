@@ -45,23 +45,37 @@ def predict_cadastral(input_image):
     if input_image is None:
         return None, "Upload a valid drone survey image."
     
-    # Gradio passes images in RGB numpy format
-    img_bgr = cv2.cvtColor(input_image, cv2.COLOR_RGB2BGR)
+    # Gradio can hand us either a numpy array or a PIL image depending on the component/runtime.
+    if isinstance(input_image, np.ndarray):
+        image_rgb = input_image
+    else:
+        image_rgb = np.array(input_image)
+
+    if image_rgb.ndim == 2:
+        image_rgb = cv2.cvtColor(image_rgb, cv2.COLOR_GRAY2RGB)
+    elif image_rgb.shape[-1] == 4:
+        image_rgb = cv2.cvtColor(image_rgb, cv2.COLOR_RGBA2RGB)
+
+    img_bgr = cv2.cvtColor(image_rgb, cv2.COLOR_RGB2BGR)
     
     # Run Mask R-CNN inference
     outputs = predictor(img_bgr)
+    instances = outputs.get("instances")
+
+    if instances is None or len(instances) == 0:
+        return image_rgb, "No structures detected in this image."
     
     # Draw colored instance segmentations
     v = Visualizer(
-        input_image, 
+        image_rgb, 
         metadata=MetadataCatalog.get("app_catalog"), 
         scale=1.0, 
-        instance_mode=ColorMode.COLOR
+        instance_mode=ColorMode.IMAGE
     )
-    out = v.draw_instance_predictions(outputs["instances"].to("cpu"))
+    out = v.draw_instance_predictions(instances.to("cpu"))
     result_rgb = out.get_image()
     
-    count = len(outputs["instances"])
+    count = len(instances)
     status_text = f"Successfully segmented {count} cadastral structures with polygon boundaries."
     
     return result_rgb, status_text
