@@ -50,7 +50,20 @@ predictor = build_model()
 
 MetadataCatalog.get("app_catalog").set(thing_classes=CLASS_NAMES)
 
-@spaces.GPU(duration=30)
+def resize_for_inference(image_rgb, max_side=1280):
+    height, width = image_rgb.shape[:2]
+    longest_side = max(height, width)
+
+    if longest_side <= max_side:
+        return image_rgb
+
+    scale = max_side / float(longest_side)
+    new_width = int(width * scale)
+    new_height = int(height * scale)
+    return cv2.resize(image_rgb, (new_width, new_height), interpolation=cv2.INTER_AREA)
+
+
+@spaces.GPU(duration=10)
 def predict_cadastral(input_image):
     if input_image is None:
         return None, "Upload a valid drone survey image."
@@ -65,6 +78,8 @@ def predict_cadastral(input_image):
         image_rgb = cv2.cvtColor(image_rgb, cv2.COLOR_GRAY2RGB)
     elif image_rgb.shape[-1] == 4:
         image_rgb = cv2.cvtColor(image_rgb, cv2.COLOR_RGBA2RGB)
+
+    image_rgb = resize_for_inference(image_rgb)
 
     img_bgr = cv2.cvtColor(image_rgb, cv2.COLOR_RGB2BGR)
     
