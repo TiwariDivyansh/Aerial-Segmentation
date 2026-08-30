@@ -10,8 +10,8 @@ def ensure_package(import_name, install_spec):
         subprocess.check_call([sys.executable, "-m", "pip", "install", "--no-cache-dir", install_spec])
 
 # 1. HACK: Dynamically install the runtime stack if Hugging Face starts without it.
-ensure_package("torch", "torch==2.2.2")
-ensure_package("torchvision", "torchvision==0.17.2")
+ensure_package("torch", "torch==2.11.0")
+ensure_package("torchvision", "torchvision==0.26.0")
 ensure_package("detectron2", "git+https://github.com/facebookresearch/detectron2.git")
 
 # 2. Now it is safe to import everything else
