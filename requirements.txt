@@ -2,4 +2,5 @@ gradio>=4.0.0
 spaces
 opencv-python-headless
 ninja
-torchvision
+torch==2.2.2
+torchvision==0.17.2
