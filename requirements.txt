@@ -1,0 +1,6 @@
+gradio>=4.0.0
+spaces
+opencv-python-headless
+torch==2.1.0
+torchvision==0.16.0
+https://dl.fbaipublicfiles.com/detectron2/wheels/cpu/torch2.1/detectron2-0.6%2Bpt2.1cpu-cp310-cp310-linux_x86_64.whl
