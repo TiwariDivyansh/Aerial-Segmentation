@@ -33,25 +33,33 @@ import numpy as np
 from PIL import Image
 import spaces
 
-try:
-    import detectron2
-except ImportError as exc:
-    if IS_WINDOWS and not DISABLE_RUNTIME_BOOTSTRAP:
-        raise RuntimeError(
-            "Detectron2 is not set up for native Windows runs here. Use Docker or WSL for local testing, "
-            "or run the Hugging Face Space for the managed Linux environment."
-        ) from exc
-    raise
-from detectron2.config import get_cfg
-from detectron2 import model_zoo
-from detectron2.engine import DefaultPredictor
-from detectron2.utils.visualizer import Visualizer, ColorMode
-from detectron2.data import MetadataCatalog
-
 # Define the classes mapped during your training
 CLASS_NAMES = ["building", "boundary_or_road"]
+PREDICTOR = None
+DETECTRON2_ERROR = None
+
+
+def get_detectron2_components():
+    global DETECTRON2_ERROR
+
+    try:
+        from detectron2.config import get_cfg
+        from detectron2 import model_zoo
+        from detectron2.engine import DefaultPredictor
+        from detectron2.utils.visualizer import Visualizer, ColorMode
+        from detectron2.data import MetadataCatalog
+        return get_cfg, model_zoo, DefaultPredictor, Visualizer, ColorMode, MetadataCatalog
+    except ImportError as exc:
+        DETECTRON2_ERROR = exc
+        return None
+
 
 def build_model():
+    detectron2_components = get_detectron2_components()
+    if detectron2_components is None:
+        raise DETECTRON2_ERROR
+
+    get_cfg, model_zoo, DefaultPredictor, _, _, _ = detectron2_components
     cfg = get_cfg()
     cfg.merge_from_file(model_zoo.get_config_file("COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml"))
     cfg.MODEL.ROI_HEADS.NUM_CLASSES = len(CLASS_NAMES)
@@ -61,10 +69,18 @@ def build_model():
         cfg.MODEL.DEVICE = "cpu"
     return DefaultPredictor(cfg)
 
-# Initialize predictor globally
-predictor = build_model()
 
-MetadataCatalog.get("app_catalog").set(thing_classes=CLASS_NAMES)
+def get_predictor():
+    global PREDICTOR
+    if PREDICTOR is None:
+        PREDICTOR = build_model()
+    return PREDICTOR
+
+
+detectron2_components = get_detectron2_components()
+if detectron2_components is not None:
+    _, _, _, _, _, MetadataCatalog = detectron2_components
+    MetadataCatalog.get("app_catalog").set(thing_classes=CLASS_NAMES)
 
 def resize_for_inference(image_rgb, max_side=1280):
     height, width = image_rgb.shape[:2]
@@ -77,6 +93,26 @@ def resize_for_inference(image_rgb, max_side=1280):
     new_width = int(width * scale)
     new_height = int(height * scale)
     return cv2.resize(image_rgb, (new_width, new_height), interpolation=cv2.INTER_AREA)
+
+
+def simple_cpu_fallback(image_rgb):
+    gray = cv2.cvtColor(image_rgb, cv2.COLOR_RGB2GRAY)
+    blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+    _, thresh = cv2.threshold(blurred, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    preview = image_rgb.copy()
+    kept = 0
+    for contour in contours:
+        area = cv2.contourArea(contour)
+        if area < 1000:
+            continue
+        x, y, w, h = cv2.boundingRect(contour)
+        cv2.rectangle(preview, (x, y), (x + w, y + h), (0, 255, 0), 2)
+        kept += 1
+
+    message = f"CPU fallback preview generated {kept} region(s)."
+    return preview, message
 
 
 def predict_cadastral_core(input_image):
@@ -97,28 +133,39 @@ def predict_cadastral_core(input_image):
     image_rgb = resize_for_inference(image_rgb)
 
     img_bgr = cv2.cvtColor(image_rgb, cv2.COLOR_RGB2BGR)
-    
-    # Run Mask R-CNN inference
-    outputs = predictor(img_bgr)
-    instances = outputs.get("instances")
 
-    if instances is None or len(instances) == 0:
-        return image_rgb, "No structures detected in this image."
-    
-    # Draw colored instance segmentations
-    v = Visualizer(
-        image_rgb, 
-        metadata=MetadataCatalog.get("app_catalog"), 
-        scale=1.0, 
-        instance_mode=ColorMode.IMAGE
-    )
-    out = v.draw_instance_predictions(instances.to("cpu"))
-    result_rgb = out.get_image()
-    
-    count = len(instances)
-    status_text = f"Successfully segmented {count} cadastral structures with polygon boundaries."
-    
-    return result_rgb, status_text
+    detectron2_components = get_detectron2_components()
+    if detectron2_components is None:
+        if IS_WINDOWS and not DISABLE_RUNTIME_BOOTSTRAP:
+            return simple_cpu_fallback(image_rgb)
+        return simple_cpu_fallback(image_rgb)
+
+    _, _, _, Visualizer, ColorMode, MetadataCatalog = detectron2_components
+
+    try:
+        predictor = get_predictor()
+        outputs = predictor(img_bgr)
+        instances = outputs.get("instances")
+
+        if instances is None or len(instances) == 0:
+            return image_rgb, "No structures detected in this image."
+
+        v = Visualizer(
+            image_rgb,
+            metadata=MetadataCatalog.get("app_catalog"),
+            scale=1.0,
+            instance_mode=ColorMode.IMAGE,
+        )
+        out = v.draw_instance_predictions(instances.to("cpu"))
+        result_rgb = out.get_image()
+
+        count = len(instances)
+        status_text = f"Successfully segmented {count} cadastral structures with polygon boundaries."
+        return result_rgb, status_text
+    except Exception as exc:
+        if IS_WINDOWS:
+            return simple_cpu_fallback(image_rgb)
+        raise exc
 
 
 @spaces.GPU(duration=10)
