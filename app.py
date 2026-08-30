@@ -1,12 +1,18 @@
 import sys
 import subprocess
 
-# 1. HACK: Dynamically install Detectron2 on startup to bypass build isolation
-try:
-    import detectron2
-except ImportError:
-    print("Installing detectron2 dynamically...")
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "--no-build-isolation", "git+https://github.com/facebookresearch/detectron2.git"])
+
+def ensure_package(import_name, install_spec):
+    try:
+        __import__(import_name)
+    except ImportError:
+        print(f"Installing {install_spec} dynamically...")
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "--no-cache-dir", install_spec])
+
+# 1. HACK: Dynamically install the runtime stack if Hugging Face starts without it.
+ensure_package("torch", "torch==2.2.2")
+ensure_package("torchvision", "torchvision==0.17.2")
+ensure_package("detectron2", "git+https://github.com/facebookresearch/detectron2.git")
 
 # 2. Now it is safe to import everything else
 import gradio as gr
