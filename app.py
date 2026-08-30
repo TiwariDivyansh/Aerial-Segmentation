@@ -66,18 +66,6 @@ predictor = build_model()
 
 MetadataCatalog.get("app_catalog").set(thing_classes=CLASS_NAMES)
 
-USE_SPACES_GPU = os.getenv("USE_SPACES_GPU", "1") == "1"
-
-
-def gpu_wrapper(duration=10):
-    if USE_SPACES_GPU:
-        return spaces.GPU(duration=duration)
-
-    def decorator(function):
-        return function
-
-    return decorator
-
 def resize_for_inference(image_rgb, max_side=1280):
     height, width = image_rgb.shape[:2]
     longest_side = max(height, width)
@@ -91,8 +79,7 @@ def resize_for_inference(image_rgb, max_side=1280):
     return cv2.resize(image_rgb, (new_width, new_height), interpolation=cv2.INTER_AREA)
 
 
-@gpu_wrapper(duration=10)
-def predict_cadastral(input_image):
+def predict_cadastral_core(input_image):
     if input_image is None:
         return None, "Upload a valid drone survey image."
     
@@ -133,6 +120,21 @@ def predict_cadastral(input_image):
     
     return result_rgb, status_text
 
+
+@spaces.GPU(duration=10)
+def predict_cadastral_gpu(input_image):
+    return predict_cadastral_core(input_image)
+
+
+def predict_cadastral_cpu(input_image):
+    return predict_cadastral_core(input_image)
+
+
+def predict_cadastral(input_image, mode):
+    if mode == "GPU":
+        return predict_cadastral_gpu(input_image)
+    return predict_cadastral_cpu(input_image)
+
 # Create UI
 with gr.Blocks(title="AI Cadastral Mapping") as demo:
     gr.Markdown("# High-Precision Cadastral Boundary Extraction")
@@ -141,6 +143,7 @@ with gr.Blocks(title="AI Cadastral Mapping") as demo:
     with gr.Row():
         with gr.Column():
             input_img = gr.Image(type="numpy", label="Upload Raw Drone Survey (JPG/PNG)")
+            mode = gr.Radio(["CPU", "GPU"], value="CPU", label="Inference Mode")
             submit_btn = gr.Button("Extract Boundaries", variant="primary")
         
         with gr.Column():
@@ -149,7 +152,7 @@ with gr.Blocks(title="AI Cadastral Mapping") as demo:
             
     submit_btn.click(
         fn=predict_cadastral,
-        inputs=[input_img],
+        inputs=[input_img, mode],
         outputs=[output_img, output_info]
     )
 
