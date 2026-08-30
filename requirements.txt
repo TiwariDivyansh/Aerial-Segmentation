@@ -2,4 +2,3 @@ gradio>=4.0.0
 spaces
 opencv-python-headless
 ninja
-git+https://github.com/facebookresearch/detectron2.git

@@ -1,3 +1,14 @@
+import sys
+import subprocess
+
+# 1. HACK: Dynamically install Detectron2 on startup to bypass build isolation
+try:
+    import detectron2
+except ImportError:
+    print("Installing detectron2 dynamically...")
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "git+https://github.com/facebookresearch/detectron2.git"])
+
+# 2. Now it is safe to import everything else
 import gradio as gr
 import cv2, os, torch
 import numpy as np
