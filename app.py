@@ -7,7 +7,11 @@ def ensure_package(import_name, install_spec):
         __import__(import_name)
     except ImportError:
         print(f"Installing {install_spec} dynamically...")
-        subprocess.check_call([sys.executable, "-m", "pip", "install", "--no-cache-dir", install_spec])
+        command = [sys.executable, "-m", "pip", "install", "--no-cache-dir"]
+        if install_spec.startswith("git+https://github.com/facebookresearch/detectron2.git"):
+            command.append("--no-build-isolation")
+        command.append(install_spec)
+        subprocess.check_call(command)
 
 # 1. HACK: Dynamically install the runtime stack if Hugging Face starts without it.
 ensure_package("torch", "torch==2.11.0")
