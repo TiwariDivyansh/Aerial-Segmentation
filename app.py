@@ -74,6 +74,10 @@ SAMPLE_IMAGES = sorted(
     + glob(os.path.join("proper samples", "*.jpeg"))
 )
 
+
+def select_sample(evt: gr.SelectData):
+    return SAMPLE_IMAGES[evt.index]
+
 # =====================================================================
 # 2. INFERENCE & TOPOLOGICAL CLEANING ENGINE
 # =====================================================================
@@ -263,25 +267,28 @@ with gr.Blocks(theme=gr.themes.Soft(), title="AI Cadastral Mapping System") as d
             summary_output = gr.Markdown()
 
     with gr.Row():
-        sample_download = gr.File(
-            value=SAMPLE_IMAGES,
-            label="Download sample images",
-            file_count="multiple",
-        )
         geojson_download = gr.File(label="Download Legal-Grade GeoJSON (GIS Ready)")
         csv_download = gr.File(label="Download Attribute Records (CSV)")
 
     if SAMPLE_IMAGES:
         gr.Markdown("### Try a sample image")
-        gr.Markdown("Select a drone image below to load it and run the CPU demo automatically.")
-        gr.Examples(
-            examples=[[path, 0.65, 100, "CPU"] for path in SAMPLE_IMAGES],
-            inputs=[input_img, conf_slider, area_slider, device_selector],
+        sample_gallery = gr.Gallery(
+            value=SAMPLE_IMAGES,
+            label="Select an image to run inference. Use the download icon on a thumbnail to save it.",
+            columns=7,
+            rows=1,
+            height=150,
+            object_fit="cover",
+            show_download_button=True,
+            allow_preview=True,
+        )
+        sample_gallery.select(
+            fn=select_sample,
+            outputs=input_img,
+        ).then(
+            fn=run_cpu,
+            inputs=[input_img, conf_slider, area_slider],
             outputs=[output_img, summary_output, geojson_download, csv_download],
-            fn=run_selected_device,
-            run_on_click=True,
-            cache_examples=False,
-            label="Sample drone images",
         )
 
     gr.HTML("""
