@@ -1,4 +1,5 @@
 import os
+from glob import glob
 import subprocess
 import sys
 
@@ -66,6 +67,12 @@ PALETTE = {
     3: (155, 89, 182),   # Vegetation (Purple)
     4: (52, 152, 219)    # Vacant Land (Blue)
 }
+
+SAMPLE_IMAGES = sorted(
+    glob(os.path.join("proper samples", "*.png"))
+    + glob(os.path.join("proper samples", "*.jpg"))
+    + glob(os.path.join("proper samples", "*.jpeg"))
+)
 
 # =====================================================================
 # 2. INFERENCE & TOPOLOGICAL CLEANING ENGINE
@@ -208,8 +215,8 @@ def run_selected_device(input_image, conf_threshold, min_area_filter, device):
 with gr.Blocks(theme=gr.themes.Soft(), title="AI Cadastral Mapping System") as demo:
     gr.HTML("""
     <style>
-        .project-context { border: 1px solid #d97706 !important; border-radius: 8px !important; background: #fffaf0 !important; }
-        .project-context > .label-wrap { color: #92400e !important; font-weight: 700 !important; }
+        .project-context { border: 1px solid #d4d4d8 !important; border-radius: 6px !important; background: #fafafa !important; }
+        .project-context > .label-wrap { color: #27272a !important; font-weight: 600 !important; }
         .project-context .prose { color: #3f3f46 !important; }
         .team-section { border: 1px solid #d4d4d8; border-radius: 8px; padding: 20px; background: #fafafa; }
         .team-section h2 { margin: 0 0 6px; color: #18181b; }
@@ -224,7 +231,7 @@ with gr.Blocks(theme=gr.themes.Soft(), title="AI Cadastral Mapping System") as d
     gr.Markdown("# Team Engineer | AI-Based Automated Cadastral Land Parcel Extraction")
     gr.Markdown("**SIH Problem Statement 26012** | Mask R-CNN Instance Segmentation & Spatial Vector Topology Engine")
 
-    with gr.Accordion("PROJECT CONTEXT  |  APPROACH & ROADMAP", open=True, elem_classes=["project-context"]):
+    with gr.Accordion("Brief note, approach and novelty", open=False, elem_classes=["project-context"]):
         gr.Markdown("""
         **Purpose**
 
@@ -249,15 +256,33 @@ with gr.Blocks(theme=gr.themes.Soft(), title="AI Cadastral Mapping System") as d
             device_selector = gr.Radio(["CPU", "GPU (ZeroGPU)"], value="CPU", label="Inference Device")
             conf_slider = gr.Slider(minimum=0.30, maximum=0.95, value=0.65, step=0.05, label="Confidence Threshold")
             area_slider = gr.Slider(minimum=20, maximum=1000, value=100, step=20, label="Min Parcel Area Filter (px²)")
-            submit_btn = gr.Button(" Run Cadastral Delineation", variant="primary")
+            submit_btn = gr.Button("Run Cadastral Delineation", variant="primary")
 
         with gr.Column(scale=1):
             output_img = gr.Image(type="numpy", label="Segmented Cadastral Map")
             summary_output = gr.Markdown()
 
     with gr.Row():
+        sample_download = gr.File(
+            value=SAMPLE_IMAGES,
+            label="Download sample images",
+            file_count="multiple",
+        )
         geojson_download = gr.File(label="Download Legal-Grade GeoJSON (GIS Ready)")
         csv_download = gr.File(label="Download Attribute Records (CSV)")
+
+    if SAMPLE_IMAGES:
+        gr.Markdown("### Try a sample image")
+        gr.Markdown("Select a drone image below to load it and run the CPU demo automatically.")
+        gr.Examples(
+            examples=[[path, 0.65, 100, "CPU"] for path in SAMPLE_IMAGES],
+            inputs=[input_img, conf_slider, area_slider, device_selector],
+            outputs=[output_img, summary_output, geojson_download, csv_download],
+            fn=run_selected_device,
+            run_on_click=True,
+            cache_examples=False,
+            label="Sample drone images",
+        )
 
     gr.HTML("""
     <section class="team-section">
@@ -267,9 +292,9 @@ with gr.Blocks(theme=gr.themes.Soft(), title="AI Cadastral Mapping System") as d
             <div class="team-member"><strong>Rupak Kumar</strong><span>Team Leader · AI/ML and Database Management</span></div>
             <div class="team-member"><strong>Divyansh Tiwari</strong><span>AI/ML and Hosting</span></div>
             <div class="team-member"><strong>Vaibhav Goyal</strong><span>Full-Stack Integration</span></div>
-            <div class="team-member"><strong>Ishaan Agarwal</strong><span>Frontend</span></div>
+            <div class="team-member"><strong>Ishaan Agarwal</strong><span>Frontend - UI/UX</span></div>
             <div class="team-member"><strong>Palak</strong><span>Backend</span></div>
-            <div class="team-member"><strong>Pankaj</strong><span>Design</span></div>
+            <div class="team-member"><strong>Pankaj</strong><span>System Design</span></div>
         </div>
     </section>
     """)
