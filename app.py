@@ -3,6 +3,7 @@ import cv2
 import json
 import numpy as np
 import gradio as gr
+import spaces
 import geopandas as gpd
 from shapely.geometry import Polygon, MultiPolygon
 from shapely.ops import unary_union
@@ -49,7 +50,7 @@ PALETTE = {
 # =====================================================================
 # 2. INFERENCE & TOPOLOGICAL CLEANING ENGINE
 # =====================================================================
-def run_cadastral_pipeline(input_image, conf_threshold, min_area_filter):
+def run_cadastral_pipeline(input_image, conf_threshold, min_area_filter, device):
     if predictor is None:
         return None, "⚠️ Model weights (`model_final.pth`) not found. Upload the trained checkpoint to the Space repository.", None, None
 
@@ -67,6 +68,7 @@ def run_cadastral_pipeline(input_image, conf_threshold, min_area_filter):
 
     # 1. Detectron2 Inference
     cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = float(conf_threshold)
+    cfg.MODEL.DEVICE = "cuda" if device == "GPU (ZeroGPU)" and torch.cuda.is_available() else "cpu"
     local_predictor = DefaultPredictor(cfg)
     outputs = local_predictor(img_bgr)
 
@@ -165,6 +167,21 @@ def run_cadastral_pipeline(input_image, conf_threshold, min_area_filter):
 
     return annotated, summary_text, geojson_path, csv_path
 
+
+def run_cpu(input_image, conf_threshold, min_area_filter):
+    return run_cadastral_pipeline(input_image, conf_threshold, min_area_filter, "CPU")
+
+
+@spaces.GPU
+def run_gpu(input_image, conf_threshold, min_area_filter):
+    return run_cadastral_pipeline(input_image, conf_threshold, min_area_filter, "GPU (ZeroGPU)")
+
+
+def run_selected_device(input_image, conf_threshold, min_area_filter, device):
+    if device == "GPU (ZeroGPU)":
+        return run_gpu(input_image, conf_threshold, min_area_filter)
+    return run_cpu(input_image, conf_threshold, min_area_filter)
+
 # =====================================================================
 # 3. GRADIO USER INTERFACE
 # =====================================================================
@@ -175,6 +192,7 @@ with gr.Blocks(theme=gr.themes.Soft(), title="AI Cadastral Mapping System") as d
     with gr.Row():
         with gr.Column(scale=1):
             input_img = gr.Image(type="pil", label="Upload Drone Orthomosaic Patch (JPG/PNG)")
+            device_selector = gr.Radio(["CPU", "GPU (ZeroGPU)"], value="CPU", label="Inference Device")
             conf_slider = gr.Slider(minimum=0.30, maximum=0.95, value=0.65, step=0.05, label="Confidence Threshold")
             area_slider = gr.Slider(minimum=20, maximum=1000, value=100, step=20, label="Min Parcel Area Filter (px²)")
             submit_btn = gr.Button("🚀 Run Cadastral Delineation", variant="primary")
@@ -188,8 +206,8 @@ with gr.Blocks(theme=gr.themes.Soft(), title="AI Cadastral Mapping System") as d
         csv_download = gr.File(label="📊 Download Attribute Records (CSV)")
 
     submit_btn.click(
-        fn=run_cadastral_pipeline,
-        inputs=[input_img, conf_slider, area_slider],
+        fn=run_selected_device,
+        inputs=[input_img, conf_slider, area_slider, device_selector],
         outputs=[output_img, summary_output, geojson_download, csv_download]
     )
 

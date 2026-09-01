@@ -1,9 +1,11 @@
 --extra-index-url https://download.pytorch.org/whl/cpu
-torch==2.1.2+cpu
-torchvision==0.16.2+cpu
+torch==2.11.0
+torchvision==0.26.0
+--no-build-isolation
 opencv-python-headless>=4.9.0.80
 shapely>=2.0.0
 geopandas>=0.14.0
 matplotlib>=3.8.0
 numpy>=1.24.0
-https://dl.fbaipublicfiles.com/detectron2/wheels/cpu/torch2.1/detectron2-0.6%2Bcpu-cp310-cp310-linux_x86_64.whl
+spaces
+git+https://github.com/facebookresearch/detectron2.git
