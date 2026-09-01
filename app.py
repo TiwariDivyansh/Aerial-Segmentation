@@ -1,4 +1,24 @@
 import os
+import subprocess
+import sys
+
+
+def ensure_detectron2():
+    try:
+        import detectron2  # noqa: F401
+    except ImportError:
+        subprocess.check_call([
+            sys.executable,
+            "-m",
+            "pip",
+            "install",
+            "--no-build-isolation",
+            "git+https://github.com/facebookresearch/detectron2.git",
+        ])
+
+
+ensure_detectron2()
+
 import cv2
 import json
 import numpy as np
