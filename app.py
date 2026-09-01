@@ -72,7 +72,7 @@ PALETTE = {
 # =====================================================================
 def run_cadastral_pipeline(input_image, conf_threshold, min_area_filter, device):
     if predictor is None:
-        return None, "⚠️ Model weights (`model_final.pth`) not found. Upload the trained checkpoint to the Space repository.", None, None
+        return None, " Model weights (`model_final.pth`) not found. Upload the trained checkpoint to the Space repository.", None, None
 
     if input_image is None:
         return None, "Please upload a valid drone survey orthomosaic patch.", None, None
@@ -177,7 +177,7 @@ def run_cadastral_pipeline(input_image, conf_threshold, min_area_filter, device)
     gdf.drop(columns=["geometry"]).to_csv(csv_path, index=False)
 
     summary_text = f"""
-    ### 📊 Extraction Analytics
+    ### Extraction Analytics
     * **Extracted Features / Parcels:** {len(clean_polygons)}
     * **Topological Overlaps:** 0 (Enforced via Boolean Spatial Difference)
     * **Mean Delineation Confidence:** {np.mean(clean_confs):.2f}
@@ -206,8 +206,27 @@ def run_selected_device(input_image, conf_threshold, min_area_filter, device):
 # 3. GRADIO USER INTERFACE
 # =====================================================================
 with gr.Blocks(theme=gr.themes.Soft(), title="AI Cadastral Mapping System") as demo:
-    gr.Markdown("# 🛰️ AI-Based Automated Cadastral Land Parcel Extraction")
+    gr.Markdown("# Team Engineer | AI-Based Automated Cadastral Land Parcel Extraction")
     gr.Markdown("**SIH Problem Statement 26012** | Mask R-CNN Instance Segmentation & Spatial Vector Topology Engine")
+
+    with gr.Accordion("Project context", open=False):
+        gr.Markdown("""
+        **Purpose**
+
+        This prototype turns drone or orthorectified imagery into a GIS-ready handoff for cadastral workflows. It combines instance segmentation, confidence filtering, polygon vectorization, and overlap cleanup so survey teams can review extracted features instead of tracing every boundary manually.
+
+        **Implemented in this demo**
+
+        - Mask R-CNN instance segmentation for the trained land-feature classes
+        - CPU inference and an optional GPU (ZeroGPU) route
+        - Confidence and minimum-area filtering
+        - Non-overlapping polygon cleanup using Shapely
+        - Visual overlays plus GeoJSON and CSV downloads
+
+        **Next extensions**
+
+        Georeferenced GeoTIFF support, comparison against existing parcel layers, low-confidence surveyor review, editable WebGIS layers, and feedback-driven retraining can build on these exported vector results.
+        """)
 
     with gr.Row():
         with gr.Column(scale=1):
@@ -215,15 +234,15 @@ with gr.Blocks(theme=gr.themes.Soft(), title="AI Cadastral Mapping System") as d
             device_selector = gr.Radio(["CPU", "GPU (ZeroGPU)"], value="CPU", label="Inference Device")
             conf_slider = gr.Slider(minimum=0.30, maximum=0.95, value=0.65, step=0.05, label="Confidence Threshold")
             area_slider = gr.Slider(minimum=20, maximum=1000, value=100, step=20, label="Min Parcel Area Filter (px²)")
-            submit_btn = gr.Button("🚀 Run Cadastral Delineation", variant="primary")
+            submit_btn = gr.Button(" Run Cadastral Delineation", variant="primary")
 
         with gr.Column(scale=1):
             output_img = gr.Image(type="numpy", label="Segmented Cadastral Map")
             summary_output = gr.Markdown()
 
     with gr.Row():
-        geojson_download = gr.File(label="📥 Download Legal-Grade GeoJSON (GIS Ready)")
-        csv_download = gr.File(label="📊 Download Attribute Records (CSV)")
+        geojson_download = gr.File(label="Download Legal-Grade GeoJSON (GIS Ready)")
+        csv_download = gr.File(label="Download Attribute Records (CSV)")
 
     submit_btn.click(
         fn=run_selected_device,
