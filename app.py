@@ -206,10 +206,25 @@ def run_selected_device(input_image, conf_threshold, min_area_filter, device):
 # 3. GRADIO USER INTERFACE
 # =====================================================================
 with gr.Blocks(theme=gr.themes.Soft(), title="AI Cadastral Mapping System") as demo:
+    gr.HTML("""
+    <style>
+        .project-context { border: 1px solid #d97706 !important; border-radius: 8px !important; background: #fffaf0 !important; }
+        .project-context > .label-wrap { color: #92400e !important; font-weight: 700 !important; }
+        .project-context .prose { color: #3f3f46 !important; }
+        .team-section { border: 1px solid #d4d4d8; border-radius: 8px; padding: 20px; background: #fafafa; }
+        .team-section h2 { margin: 0 0 6px; color: #18181b; }
+        .team-intro { margin: 0 0 18px; color: #52525b; }
+        .team-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+        .team-member { border: 1px solid #e4e4e7; border-radius: 6px; padding: 14px; background: white; }
+        .team-member strong { display: block; color: #18181b; margin-bottom: 5px; }
+        .team-member span { display: block; color: #52525b; font-size: 0.9em; }
+        @media (max-width: 700px) { .team-grid { grid-template-columns: 1fr; } }
+    </style>
+    """)
     gr.Markdown("# Team Engineer | AI-Based Automated Cadastral Land Parcel Extraction")
     gr.Markdown("**SIH Problem Statement 26012** | Mask R-CNN Instance Segmentation & Spatial Vector Topology Engine")
 
-    with gr.Accordion("Project context", open=False):
+    with gr.Accordion("PROJECT CONTEXT  |  APPROACH & ROADMAP", open=True, elem_classes=["project-context"]):
         gr.Markdown("""
         **Purpose**
 
@@ -243,6 +258,21 @@ with gr.Blocks(theme=gr.themes.Soft(), title="AI Cadastral Mapping System") as d
     with gr.Row():
         geojson_download = gr.File(label="Download Legal-Grade GeoJSON (GIS Ready)")
         csv_download = gr.File(label="Download Attribute Records (CSV)")
+
+    gr.HTML("""
+    <section class="team-section">
+        <h2>Team Engineer</h2>
+        <p class="team-intro">A multidisciplinary team building a practical bridge between aerial imagery, AI segmentation, and GIS-ready land records.</p>
+        <div class="team-grid">
+            <div class="team-member"><strong>Rupak Kumar</strong><span>Team Leader · AI/ML and Database Management</span></div>
+            <div class="team-member"><strong>Divyansh Tiwari</strong><span>AI/ML and Hosting</span></div>
+            <div class="team-member"><strong>Vaibhav Goyal</strong><span>Full-Stack Integration</span></div>
+            <div class="team-member"><strong>Ishaan Agarwal</strong><span>Frontend</span></div>
+            <div class="team-member"><strong>Palak</strong><span>Backend</span></div>
+            <div class="team-member"><strong>Pankaj</strong><span>Design</span></div>
+        </div>
+    </section>
+    """)
 
     submit_btn.click(
         fn=run_selected_device,
