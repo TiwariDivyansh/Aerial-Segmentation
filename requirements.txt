@@ -1,6 +1,5 @@
-torch==2.11.0
-torchvision==0.26.0
---no-build-isolation
+torch==2.10.0
+torchvision==0.25.0
 opencv-python-headless>=4.9.0.80
 shapely>=2.0.0
 geopandas>=0.14.0
