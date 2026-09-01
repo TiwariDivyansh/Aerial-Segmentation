@@ -76,7 +76,8 @@ SAMPLE_IMAGES = sorted(
 
 
 def select_sample(evt: gr.SelectData):
-    return SAMPLE_IMAGES[evt.index]
+    sample_path = SAMPLE_IMAGES[evt.index]
+    return sample_path, sample_path
 
 # =====================================================================
 # 2. INFERENCE & TOPOLOGICAL CLEANING ENGINE
@@ -274,17 +275,17 @@ with gr.Blocks(theme=gr.themes.Soft(), title="AI Cadastral Mapping System") as d
         gr.Markdown("### Try a sample image")
         sample_gallery = gr.Gallery(
             value=SAMPLE_IMAGES,
-            label="Select an image to run inference. Use the download icon on a thumbnail to save it.",
+            label="Select an image to run inference",
             columns=7,
             rows=1,
             height=150,
             object_fit="cover",
-            show_download_button=True,
             allow_preview=True,
         )
+        sample_download = gr.DownloadButton("Download selected sample")
         sample_gallery.select(
             fn=select_sample,
-            outputs=input_img,
+            outputs=[input_img, sample_download],
         ).then(
             fn=run_cpu,
             inputs=[input_img, conf_slider, area_slider],
