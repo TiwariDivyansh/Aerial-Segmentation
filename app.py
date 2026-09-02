@@ -231,6 +231,17 @@ with gr.Blocks(theme=gr.themes.Soft(), title="AI Cadastral Mapping System") as d
         .team-member strong { display: block; color: #18181b; margin-bottom: 5px; }
         .team-member span { display: block; color: #52525b; font-size: 0.9em; }
         @media (max-width: 700px) { .team-grid { grid-template-columns: 1fr; } }
+        @media (prefers-color-scheme: dark) {
+            .project-context { border-color: #52525b !important; background: #27272a !important; }
+            .project-context > .label-wrap { color: #f4f4f5 !important; }
+            .project-context .prose { color: #e4e4e7 !important; }
+            .team-section { border-color: #52525b; background: #18181b; }
+            .team-section h2 { color: #f4f4f5; }
+            .team-intro { color: #a1a1aa; }
+            .team-member { border-color: #3f3f46; background: #27272a; }
+            .team-member strong { color: #f4f4f5; }
+            .team-member span { color: #a1a1aa; }
+        }
     </style>
     """)
     gr.Markdown("# Team Engineer | AI-Based Automated Cadastral Land Parcel Extraction")
