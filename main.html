@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Team Engineer — Cadastral Mapping Prototype</title>
+<style>
+  :root{
+    --bg:#0a0b0d;
+    --panel:#131519;
+    --panel-2:#191c22;
+    --line:#262a32;
+    --text:#e9ebee;
+    --muted:#9aa0ab;
+    --accent:#f2711c;
+    --accent-dim:#7a3b13;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      linear-gradient(var(--bg),var(--bg)),
+      repeating-linear-gradient(0deg, rgba(255,255,255,0.025) 0 1px, transparent 1px 48px),
+      repeating-linear-gradient(90deg, rgba(255,255,255,0.025) 0 1px, transparent 1px 48px);
+    color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+    line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:var(--accent);}
+  a:focus-visible, button:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
+
+  .wrap{max-width:920px;margin:0 auto;padding:64px 24px 96px;}
+
+  .mono{font-family:'JetBrains Mono',ui-monospace,'SFMono-Regular',Menlo,Consolas,monospace;}
+
+  header.hero{margin-bottom:64px;}
+  .tag{
+    display:inline-block;
+    font-family:'JetBrains Mono',ui-monospace,'SFMono-Regular',Menlo,Consolas,monospace;
+    font-size:13px;
+    color:var(--accent);
+    border:1px solid var(--accent-dim);
+    background:rgba(242,113,28,0.08);
+    padding:4px 10px;
+    border-radius:3px;
+    margin-bottom:20px;
+  }
+  h1{
+    font-family:'JetBrains Mono',ui-monospace,'SFMono-Regular',Menlo,Consolas,monospace;
+    font-size:44px;
+    line-height:1.15;
+    margin:0 0 14px;
+    letter-spacing:-0.5px;
+  }
+  .hero p{
+    color:var(--muted);
+    font-size:17px;
+    max-width:64ch;
+    margin:0;
+  }
+
+  section{margin-bottom:64px;}
+  h2{
+    font-size:22px;
+    margin:0 0 24px;
+    padding-bottom:12px;
+    border-bottom:1px solid var(--line);
+  }
+
+  .approach-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:1px;
+    background:var(--line);
+    border:1px solid var(--line);
+  }
+  .approach-card{
+    background:var(--panel);
+    padding:22px 24px;
+  }
+  .approach-card h3{
+    font-size:15px;
+    margin:0 0 8px;
+    color:var(--accent);
+    font-weight:600;
+  }
+  .approach-card p{
+    margin:0;
+    color:var(--muted);
+    font-size:14.5px;
+  }
+  .approach-note{
+    margin-top:18px;
+    color:var(--muted);
+    font-size:14.5px;
+    border-left:2px solid var(--accent-dim);
+    padding-left:16px;
+  }
+
+  .gallery{
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:16px;
+  }
+  figure{margin:0;background:var(--panel);border:1px solid var(--line);overflow:hidden;}
+  figure img{display:block;width:100%;height:190px;object-fit:cover;}
+  .placeholder{
+    height:190px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    color:var(--muted);
+    border-bottom:1px dashed var(--line);
+  }
+  .placeholder svg{opacity:0.5;}
+  .placeholder .fname{
+    font-family:'JetBrains Mono',ui-monospace,'SFMono-Regular',Menlo,Consolas,monospace;
+    font-size:12px;
+    color:var(--accent);
+  }
+  figcaption{
+    padding:12px 14px;
+    font-size:13.5px;
+    color:var(--muted);
+    display:flex;
+    gap:8px;
+  }
+  figcaption .num{
+    font-family:'JetBrains Mono',ui-monospace,'SFMono-Regular',Menlo,Consolas,monospace;
+    color:var(--accent);
+    flex-shrink:0;
+  }
+
+  table{width:100%;border-collapse:collapse;font-size:14.5px;}
+  th,td{text-align:left;padding:12px 14px;border-bottom:1px solid var(--line);}
+  th{
+    color:var(--muted);
+    font-weight:500;
+    font-size:13px;
+    font-family:'JetBrains Mono',ui-monospace,'SFMono-Regular',Menlo,Consolas,monospace;
+  }
+  td.name{font-weight:600;}
+  td .lead{
+    display:inline-block;
+    margin-left:8px;
+    font-size:11px;
+    color:var(--accent);
+    border:1px solid var(--accent-dim);
+    padding:1px 6px;
+    border-radius:3px;
+    font-family:'JetBrains Mono',ui-monospace,'SFMono-Regular',Menlo,Consolas,monospace;
+    vertical-align:middle;
+  }
+  td.email{color:var(--muted);}
+  tr:last-child td{border-bottom:none;}
+
+  footer{
+    color:var(--muted);
+    font-size:13px;
+    text-align:center;
+    padding-top:24px;
+    border-top:1px solid var(--line);
+  }
+
+  @media (max-width:640px){
+    h1{font-size:32px;}
+    .approach-grid,.gallery{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <span class="tag">SIH · PS 26012 · Dept. of Land Resources</span>
+    <h1>Team Engineer</h1>
+    <p>AI-based automated urban parcel mapping and cadastral feature extraction from drone imagery — turning raw segmentation output into a validated, GIS-ready handoff.</p>
+  </header>
+
+  <section>
+    <h2>What our approach does differently</h2>
+    <div class="approach-grid">
+      <div class="approach-card">
+        <h3>Three specialised models, not one generalist</h3>
+        <p>A land-use classifier, a building-vs-parcel separator, and a dedicated boundary-delineation model — each trained for its own task instead of one model doing everything.</p>
+      </div>
+      <div class="approach-card">
+        <h3>Automated topology validation</h3>
+        <p>Generated parcels are checked against neighbouring parcels and existing GIS land records for overlaps, gaps, and mismatches before being marked ready for use.</p>
+      </div>
+      <div class="approach-card">
+        <h3>Confidence-based surveyor routing</h3>
+        <p>Every parcel carries a confidence score. Low-confidence areas are automatically flagged and sent to a field surveyor instead of being accepted as correct.</p>
+      </div>
+      <div class="approach-card">
+        <h3>A feedback loop that keeps learning</h3>
+        <p>Surveyor corrections feed back into retraining, so accuracy improves with real-world use instead of staying fixed after the first training run.</p>
+      </div>
+    </div>
+    <p class="approach-note">Vision models and government drone programmes already prove feature extraction and data collection work on their own. What's missing is the bridge from raw AI output to a legacy GIS workflow a land-records officer can trust — that's the gap this closes.</p>
+  </section>
+
+  <section>
+    <h2>Sample Image</h2>
+    
+  </section>
+
+  <section>
+    <h2>Team</h2>
+    <table>
+      <thead>
+        <tr><th>Name</th><th>Email</th><th>Role</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="name">Rupak Kumar<span class="lead">Team Leader</span></td>
+          <td class="email"><a href="mailto:24f2001886@ds.study.iitm.ac.in"></a>24f2001886@ds.study.iitm.ac.in</td>
+          <td>AI/ML &amp; Database Management</td>
+        </tr>
+        <tr>
+          <td class="name">Divyansh Tiwari</td>
+          <td class="email"><a href="mailto:22f3001534@ds.study.iitm.ac.in"></a>22f3001534@ds.study.iitm.ac.in</td>
+          <td>AI/ML &amp; Hosting</td>
+        </tr>
+        <tr>
+          <td class="name">Vaibhav Goyal</td>
+          <td class="email"><a href="mailto:23f1000082@ds.study.iitm.ac.in"></a>23f1000082@ds.study.iitm.ac.in</td>
+          <td>Full-Stack Integration</td>
+        </tr>
+        <tr>
+          <td class="name">Ishaan Agarwal</td>
+          <td class="email"><a href="mailto:26f2001762@ds.study.iitm.ac.in"></a>26f2001762@ds.study.iitm.ac.in</td>
+          <td>Frontend</td>
+        </tr>
+        <tr>
+          <td class="name">Palak</td>
+          <td class="email"><a href="mailto:26f2002585@ds.study.iitm.ac.in"></a>26f2002585@ds.study.iitm.ac.in</td>
+          <td>Backend</td>
+        </tr>
+        <tr>
+          <td class="name">Pankaj</td>
+          <td class="email"><a href="mailto:26f1001709@ds.study.iitm.ac.in"></a>26f1001709@ds.study.iitm.ac.in</td>
+          <td>Designing</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <footer>Smart India Hackathon · Problem Statement 26012 · Team Engineer</footer>
+
+</div>
+</body>
+</html>
